@@ -6,6 +6,10 @@ replace github.com/hashicorp/boundary/api => ./api
 
 replace github.com/hashicorp/boundary/sdk => ./sdk
 
+// TODO jimlambrt 9/2021: remove local override the encrypt filter, since the
+// required PR is stil inflight
+replace github.com/hashicorp/eventlogger/filters/encrypt => /Users/jimlambrt/workspaces/github/hashicorp/go-eventlogger/filters/encrypt
+
 require (
 	github.com/armon/go-metrics v0.3.9
 	github.com/bufbuild/buf v0.37.0
