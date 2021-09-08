@@ -1,4 +1,15 @@
 begin;
+  -- replaces check from internal/db/schema/migrations/postgres/0/60_wh_domain_types.up.sql
+  alter domain wh_public_id drop constraint wh_public_id_check;
+  alter domain wh_public_id add constraint wh_public_id_check
+  check(
+    value = 'None'
+    or
+    value = 'Unknown'
+    or
+    length(trim(value)) > 10
+  );
+
   create table wh_credential_dimension (
     -- random id generated using encode(digest(gen_random_bytes(16), 'sha256'), 'base64')
     -- this is done to prevent conflicts with rows in other clusters
@@ -70,11 +81,14 @@ begin;
       on update cascade
   );
 
-  -- A "no credentials" group an dimension. When a session has no credentials this is used as the "None" value.
+  -- Add "no credentials" and "Unknown" group an dimension.
+  -- When a session has no credentials "no credentials" is used as the "None" value.
+  -- "Unknown" is used for existing data prior to the credential_dimension existing.
   insert into wh_credential_group
     (key)
   values
-    ('no credentials');
+    ('no credentials'),
+    ('Unknown');
   insert into wh_credential_dimension (
     key,
     credential_purpose,
@@ -84,7 +98,9 @@ begin;
     project_id,            project_name,            project_description,
     organization_id,       organization_name,       organization_description,
     current_row_indicator, row_effective_time,      row_expiration_time
-  )                        values                   (
+  )
+  values
+  (
     'no credential',
     'None',
     'None',                'None',                  'None',                   'None',                         'None',                           'None',                               'None',
@@ -93,10 +109,21 @@ begin;
     '00000000000',         'None',                  'None',
     '00000000000',         'None',                  'None',
     'Current',             now(),                   'infinity'::timestamptz
+  ),
+  (
+    'Unknown',
+    'Unknown',
+    'Unknown',             'Unknown',               'Unknown',                'Unknown',                      'Unknown',                        'Unknown',                            'Unknown',
+    'Unknown',             'Unknown',               'Unknown',                'Unknown',                      'Unknown',                        'Unknown',
+    'Unknown',             'Unknown',               'Unknown',                'Unknown',                      -1,                               -1,                                   -1,
+    '00000000000',         'Unknown',               'Unknown',
+    '00000000000',         'Unknown',               'Unknown',
+    'Current',             now(),                   'infinity'::timestamptz
   );
   insert into wh_credential_group_membership
     (credential_group_key, credential_key)
   values
-    ('no credentials', 'no credential');
+    ('no credentials',     'no credential'),
+    ('Unknown',            'Unknown');
 
 commit;

@@ -4,9 +4,9 @@ begin;
 
   select wtt_load('widgets', 'iam', 'kms', 'auth', 'hosts', 'targets', 'credentials');
   -- ensure no existing dimensions or bridge table rows
-  select is(count(*), 0::bigint) from wh_credential_dimension where organization_id = 'o_____widget';
-  select is(count(*), 0::bigint) from wh_credential_group_membership where credential_group_key != 'no credentials';
-  select is(count(*), 0::bigint) from wh_credential_group where key != 'no credentials';
+  select is(count(*), 0::bigint) from wh_credential_dimension        where organization_id      =  'o_____widget';
+  select is(count(*), 0::bigint) from wh_credential_group_membership where credential_group_key != 'no credentials' and credential_group_key != 'Unknown';
+  select is(count(*), 0::bigint) from wh_credential_group            where key                  != 'no credentials' and key                  != 'Unknown';
 
   --- insert single credential
   insert into session
@@ -19,9 +19,9 @@ begin;
   values
     ('s1____walter', 'vl______wvl1', null, 'application');
 
-  select is(count(*), 1::bigint) from wh_credential_dimension where organization_id = 'o_____widget';
-  select is(count(*), 1::bigint) from wh_credential_group_membership where credential_group_key != 'no credentials';
-  select is(count(*), 1::bigint) from wh_credential_group where key != 'no credentials';
+  select is(count(*), 1::bigint) from wh_credential_dimension        where organization_id      =  'o_____widget';
+  select is(count(*), 1::bigint) from wh_credential_group_membership where credential_group_key != 'no credentials' and credential_group_key != 'Unknown';
+  select is(count(*), 1::bigint) from wh_credential_group            where key                  != 'no credentials' and key                  != 'Unknown';
 
   select * from finish();
 rollback;

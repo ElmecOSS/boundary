@@ -1,7 +1,7 @@
 begin;
   alter table wh_session_accumulating_fact
     add column credential_group_key wh_dim_key not null
-    default 'no credentials'
+    default 'Unknown'
     references wh_credential_group (key)
     on delete restrict
     on update cascade;
