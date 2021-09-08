@@ -133,7 +133,15 @@ func (a *audit) ComposeFrom(events []*eventlogger.Event) (eventlogger.EventType,
 			payload.Request = gated.Request
 		}
 		if gated.Response != nil {
-			payload.Response = gated.Response
+			if payload.Response == nil {
+				payload.Response = &Response{}
+			}
+			if gated.Response.StatusCode != 0 {
+				payload.Response.StatusCode = gated.Response.StatusCode
+			}
+			if gated.Response.Details != nil {
+				payload.Response.Details = gated.Response.Details
+			}
 		}
 		if !gated.Timestamp.IsZero() {
 			payload.Timestamp = gated.Timestamp
