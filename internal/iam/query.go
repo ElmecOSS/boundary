@@ -12,7 +12,7 @@ const (
 		on iam_user_acct_info.public_id = auth_account.iam_user_id
 	where 
 		iam_user_acct_info.scope_id = auth_account.scope_id and
-		auth_account.public_id = $1`
+		auth_account.public_id = ?`
 
 	// whereValidAuthMethod - determine if an auth method public_id within a scope_id
 	// is valid by returning a count of matching rows.
@@ -34,7 +34,7 @@ const (
 	  -- returns the current list
 	  select public_id
 		from auth_account
-	   where iam_user_id = $1
+	   where iam_user_id = ?
 	),
 	keep_accounts (account_id) as (
 	  -- returns the KEEP list
@@ -78,7 +78,7 @@ const (
 	  -- returns the current list
 	  select member_id
 		from iam_group_member
-	   where group_id = $1
+	   where group_id = ?
 	),
 	keep_members (member_id) as (
 	  -- returns the KEEP list

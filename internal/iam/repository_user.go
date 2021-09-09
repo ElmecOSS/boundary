@@ -3,6 +3,7 @@ package iam
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/boundary/internal/db"
@@ -574,6 +575,8 @@ func (r *Repository) SetUserAccounts(ctx context.Context, userId string, userVer
 		db.ExpBackoff{},
 		func(reader db.Reader, w db.Writer) error {
 			associateIds, disassociateIds, err := associationChanges(ctx, reader, userId, accountIds)
+			fmt.Println("assoc: ", associateIds)
+			fmt.Println("disac: ", disassociateIds)
 			if err != nil {
 				return errors.Wrap(ctx, err, op, errors.WithMsg("unable to determine changes"))
 			}
@@ -602,6 +605,7 @@ func (r *Repository) SetUserAccounts(ctx context.Context, userId string, userVer
 			updatedUser.PublicId = userId
 			updatedUser.Version = userVersion + 1
 			var userOplogMsg oplog.Message
+			fmt.Println("updating: ", updatedUser.Version+1)
 			rowsUpdated, err := w.Update(ctx, &updatedUser, []string{"Version"}, nil, db.NewOplogMsg(&userOplogMsg), db.WithVersion(&userVersion))
 			if err != nil {
 				return errors.Wrap(ctx, err, op, errors.WithMsg("unable to update user version"))
@@ -782,10 +786,16 @@ func dissociateUserFromAccounts(ctx context.Context, repoKms *kms.Kms, reader db
 // associationChanges returns two slices: accounts to associate and disassociate
 func associationChanges(ctx context.Context, reader db.Reader, userId string, accountIds []string) ([]string, []string, error) {
 	const op = "iam.associationChanges"
+
+	stackSlice := make([]byte, 1500)
+	s := runtime.Stack(stackSlice, false)
+	fmt.Printf("\n%s", stackSlice[0:s])
+
 	var inClauseSpots []string
-	// starts at 2 because there is already a $1 in the query
+	// starts at 2 because there is already a ? in the query
 	for i := 2; i < len(accountIds)+2; i++ {
-		inClauseSpots = append(inClauseSpots, fmt.Sprintf("$%d", i))
+		// inClauseSpots = append(inClauseSpots, fmt.Sprintf("$%d", i))
+		inClauseSpots = append(inClauseSpots, "?")
 	}
 	inClause := strings.Join(inClauseSpots, ",")
 	if inClause == "" {
@@ -794,10 +804,13 @@ func associationChanges(ctx context.Context, reader db.Reader, userId string, ac
 	query := fmt.Sprintf(accountChangesQuery, inClause)
 
 	var params []interface{}
-	params = append(params, userId)
 	for _, v := range accountIds {
 		params = append(params, v)
 	}
+	params = append(params, userId)
+
+	fmt.Println(query)
+	fmt.Println(params)
 	rows, err := reader.Query(ctx, query, params)
 	if err != nil {
 		return nil, nil, errors.Wrap(ctx, err, op)
