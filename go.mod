@@ -8,7 +8,7 @@ replace github.com/hashicorp/boundary/sdk => ./sdk
 
 // tmp use of local clone as we understand any required upstream PRs to
 // compatibility.
-replace gorm.io/gorm => /Users/jimlambrt/workspaces/github/gorm
+replace gorm.io/gorm => /Users/jimlambrt/workspaces/github/hashicorp/gorm-v2
 
 require (
 	github.com/armon/go-metrics v0.3.9

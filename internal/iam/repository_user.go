@@ -575,8 +575,6 @@ func (r *Repository) SetUserAccounts(ctx context.Context, userId string, userVer
 		db.ExpBackoff{},
 		func(reader db.Reader, w db.Writer) error {
 			associateIds, disassociateIds, err := associationChanges(ctx, reader, userId, accountIds)
-			fmt.Println("assoc: ", associateIds)
-			fmt.Println("disac: ", disassociateIds)
 			if err != nil {
 				return errors.Wrap(ctx, err, op, errors.WithMsg("unable to determine changes"))
 			}
@@ -605,7 +603,6 @@ func (r *Repository) SetUserAccounts(ctx context.Context, userId string, userVer
 			updatedUser.PublicId = userId
 			updatedUser.Version = userVersion + 1
 			var userOplogMsg oplog.Message
-			fmt.Println("updating: ", updatedUser.Version+1)
 			rowsUpdated, err := w.Update(ctx, &updatedUser, []string{"Version"}, nil, db.NewOplogMsg(&userOplogMsg), db.WithVersion(&userVersion))
 			if err != nil {
 				return errors.Wrap(ctx, err, op, errors.WithMsg("unable to update user version"))
@@ -809,8 +806,6 @@ func associationChanges(ctx context.Context, reader db.Reader, userId string, ac
 	}
 	params = append(params, userId)
 
-	fmt.Println(query)
-	fmt.Println(params)
 	rows, err := reader.Query(ctx, query, params)
 	if err != nil {
 		return nil, nil, errors.Wrap(ctx, err, op)

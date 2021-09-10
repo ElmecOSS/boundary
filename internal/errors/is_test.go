@@ -254,7 +254,6 @@ func TestError_IsMissingTableError(t *testing.T) {
 		rw := db.New(conn)
 		_, err := rw.Query(context.Background(), "select * from non_existent_table", nil)
 		require.Error(err)
-		fmt.Println(err)
 		assert.True(errors.IsMissingTableError(err))
 	})
 }

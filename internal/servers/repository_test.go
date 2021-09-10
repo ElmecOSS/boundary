@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/boundary/internal/types/scope"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm/logger"
 )
 
 func TestRecoveryNonces(t *testing.T) {
@@ -102,6 +103,8 @@ func TestTagUpdatingListing(t *testing.T) {
 			},
 		},
 	}
+
+	tc.DbConn().Logger = logger.Default.LogMode(logger.Info)
 	_, _, err := repo.UpsertServer(tc.Context(), srv, servers.WithUpdateTags(true))
 	require.NoError(err)
 
