@@ -2,12 +2,14 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/hashicorp/boundary/internal/db"
 	"github.com/hashicorp/boundary/internal/iam"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm/logger"
 )
 
 func TestDB_AuthMethodIDTrigger(t *testing.T) {
@@ -23,7 +25,7 @@ create table if not exists test_auth_method (
 insert into test_auth_method
   (public_id, scope_id)
 values
-  ($1, $2);
+  (@public_id, @scoped_id);
 `
 		addTriggers = `
 create trigger
@@ -33,10 +35,10 @@ insert on test_auth_method
   for each row execute procedure insert_auth_method_subtype();
 `
 		baseTableQuery = `
-select count(*) from auth_method where public_id = $1;
+select count(*) from auth_method where public_id = @public_id 
 `
 		testTableQuery = `
-select count(*) from test_auth_method where public_id = $1;
+select count(*) from test_auth_method where public_id = @public_id
 `
 	)
 
@@ -54,8 +56,10 @@ select count(*) from test_auth_method where public_id = $1;
 
 	org, _ := iam.TestScopes(t, iam.TestRepo(t, conn, wrapper))
 
+	conn.Logger = logger.Default.LogMode(logger.Info)
+
 	id := "l1Ocw0TpHn800CekIxIXlmQqRDgFDfYl"
-	inserted, err := rw.Exec(ctx, insert, []interface{}{id, org.GetPublicId()})
+	inserted, err := rw.Exec(ctx, insert, []interface{}{sql.Named("public_id", id), sql.Named("scoped_id", org.GetPublicId())})
 	require.NoError(err)
 	require.Equal(1, inserted)
 
@@ -63,7 +67,7 @@ select count(*) from test_auth_method where public_id = $1;
 		Count int
 	}
 	var count c
-	rows, err := rw.Query(ctx, baseTableQuery, []interface{}{id})
+	rows, err := rw.Query(ctx, baseTableQuery, []interface{}{sql.Named("public_id", id)})
 	require.NoError(err)
 	defer rows.Close()
 	for rows.Next() {
@@ -73,7 +77,7 @@ select count(*) from test_auth_method where public_id = $1;
 	assert.Equal(1, count.Count)
 
 	count.Count = 0
-	rows, err = rw.Query(ctx, testTableQuery, []interface{}{id})
+	rows, err = rw.Query(ctx, testTableQuery, []interface{}{sql.Named("public_id", id)})
 	require.NoError(err)
 	defer rows.Close()
 	for rows.Next() {
@@ -96,7 +100,7 @@ create table if not exists test_auth_account (
 insert into test_auth_account
   (public_id, auth_method_id)
 values
-  ($1, $2);
+  (?, ?);
 `
 		addTriggers = `
 create trigger
@@ -106,16 +110,16 @@ insert on test_auth_account
   for each row execute procedure insert_auth_account_subtype();
 `
 		baseTableQuery = `
-select count(*) from auth_account where public_id = $1;
+select count(*) from auth_account where public_id = ?;
 `
 		testTableQuery = `
-select count(*) from test_auth_account where public_id = $1;
+select count(*) from test_auth_account where public_id = ?;
 `
 		insertAuthMethod = `
 insert into auth_method
   (public_id, scope_id)
 values
-  ($1, $2);
+  (?, ?);
 `
 	)
 
